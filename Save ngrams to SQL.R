@@ -11,11 +11,10 @@ myDbname = "bowyeran_daily_betting";
 myPort = "3306";
 myPassword = "563Jb14123";
 
-
 # Write DFs to SQL
 # Bigram
 ## Create Connection
-con <- dbConnect(MySQL(),user= myUsername, password = myPassword, dbname = "bowyeran_daily_betting", host = myHost)
+con <- dbConnect(MySQL(),user= myUsername, password = myPassword, dbname = myDbname, host = myHost)
 load("./Files/bigramAll.RD")
 dbWriteTable(con, "bigram", bigramAll)
 rm(bigramAll)

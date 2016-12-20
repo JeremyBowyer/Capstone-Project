@@ -123,6 +123,19 @@ for(i in 1:total_sample) {
   print(time2 - time1)
   print(format(object.size(bigramAll), units = "MB"))
 }
+
+# Only include n-grams with multiple occurences
+bigramAll <- bigramAll[bigramAll$Freq > 1, ]
+# Calculate frequency sums for each preceding n-gram
+bi_sums <- aggregate(bigramAll$Freq, by = list(bigramAll$First), sum)
+# Calculate probabilities. Prediction frequency / sum of preceding n-gram
+bigramAll <- merge(bigramAll, bi_sums, by.x = "First", by.y = "Group.1", all.x = TRUE)
+bigramAll$Probs <- bigramAll$Freq / bigramAll$x
+# Only include relevant fields to reduce memory usage
+bigramAll <- bigramAll[, c("First", "Prediction", "Probs")]
+# save object
+save(bigramAll, file = "./Files/bigram.RD")
+# remove bigram DF to clean up environment
 rm(bigramAll)
 
 # trigrams
@@ -149,6 +162,20 @@ for(i in 1:total_sample) {
   print(time2 - time1)
   print(format(object.size(trigramAll), units = "MB"))
 }
+# create n-gram ID column for merge() and aggregate()
+trigramAll$ID <- paste(trigramAll$First, trigramAll$Second, sep = " ")
+# Only include n-grams with multiple occurences
+trigramAll <- trigramAll[trigramAll$Freq > 1, ]
+# Calculate frequency sums for each preceding n-gram
+tri_sums <- aggregate(trigramAll$Freq, by = list(trigramAll$ID), sum)
+# Calculate probabilities. Prediction frequency / sum of preceding n-gram
+trigramAll <- merge(trigramAll, tri_sums, by.x = "ID", by.y = "Group.1", all.x = TRUE)
+trigramAll$Probs <- trigramAll$Freq / trigramAll$x
+# Only include relevant fields to reduce memory usage
+trigramAll <- trigramAll[, c("First", "Second", "Prediction", "Probs")]
+# save object
+save(trigramAll, file = "./Files/trigram.RD")
+# remove trigram DF to clean up environment
 rm(trigramAll)
 
 # quadgrams
@@ -176,4 +203,18 @@ for(i in 1:total_sample) {
   print(time2 - time1)
   print(format(object.size(quadgramAll), units = "MB"))
 }
+# create n-gram ID column for merge() and aggregate()
+quadgramAll$ID <- paste(quadgramAll$First, quadgramAll$Second, quadgramAll$Third, sep = " ")
+# Only include n-grams with multiple occurences
+quadgramAll <- quadgramAll[quadgramAll$Freq > 1, ]
+# Calculate frequency sums for each preceding n-gram
+quad_sums <- aggregate(quadgramAll$Freq, by = list(quadgramAll$ID), sum)
+# Calculate probabilities. Prediction frequency / sum of preceding n-gram
+quadgramAll <- merge(quadgramAll, quad_sums, by.x = "ID", by.y = "Group.1", all.x = TRUE)
+quadgramAll$Probs <- quadgramAll$Freq / quadgramAll$x
+# Only include relevant fields to reduce memory usage
+quadgramAll <- quadgramAll[, c("First", "Second", "Third", "Prediction", "Probs")]
+# save object
+save(quadgramAll, file = "./Files/quadgram.RD")
+# remove quadgram DF to clean up environment
 rm(quadgramAll)
