@@ -1,3 +1,150 @@
+# Prediction Algorithm -- Requires that 2,3,4-gram tables and discount rates
+text_pred <- function(statement) {
+  clean <- clean_input(statement)
+  clean_length <- length(clean)
+  
+  ## create list of all potential terminating words ##
+  words <- bigramAll[bigramAll$First == clean[clean_length], "Prediction"]
+  words <- data.frame(Prediction = words,
+                      Probability = NA,
+                      n.gram = NA)
+  words <- words[order(words$Prediction), ]
+  
+  ## Populate Candidate Probabilities
+  if(clean_length >= 3) {
+    ## Quadgram ##
+    quad_candidates <- quad_candidates_func(clean)
+    quad_leftover <- 1 - (sum(quad_candidates$Adj.Freq, na.rm = TRUE) / sum(quad_candidates$Freq, na.rm = TRUE))
+    
+    ## Trigram ##
+    tri_candidates <- tri_candidates_func(clean, leftover = TRUE, leftover_prob = quad_leftover, left_over_words = quad_candidates$Prediction)
+    tri_leftover <- 1 - (sum(tri_candidates$Adj.Freq, na.rm = TRUE) / sum(tri_candidates$Freq, na.rm = TRUE))
+    
+    ## Bigram ##
+    bi_candidates <- bi_candidates_func(clean, leftover = TRUE, leftover_prob = quad_leftover * tri_leftover, left_over_words = c(quad_candidates$Prediction, tri_candidates$Prediction))
+    bi_leftover <- 1 - (sum(bi_candidates$Adj.Freq, na.rm = TRUE) / sum(bi_candidates$Freq, na.rm = TRUE))
+    
+    ## Add probabilities to candidate list
+    words[words$Prediction %in% quad_candidates$Prediction, "Probability"] <- quad_candidates$Probability
+    words[words$Prediction %in% tri_candidates$Prediction, "Probability"] <- tri_candidates$Probability
+    words[words$Prediction %in% bi_candidates$Prediction, "Probability"] <- bi_candidates$Probability
+  }
+}
+
+## Rebieve terminating words from 3-gram DF, given a cleaned text input
+bi_candidates_func <- function(clean, leftover = FALSE, leftover_prob, left_over_words) {
+  
+  # Retrieve list
+  bi_candidates <- bigramAll[bigramAll$First == clean[clean_length], ]
+  
+  # Remove words from higher order n-gram
+  if(leftover) {
+    bi_candidates <- bi_candidates[!bi_candidates$Prediction %in% left_over_words, ]
+  }
+  
+  # Add discount rate
+  bi_candidates <- merge(bi_candidates, bi_disc, by.x = "Freq", by.y = "frequency", all.x = TRUE)
+  
+  # Adjust frequencies down by discount
+  bi_candidates$Adj.Freq <- bi_candidates$Freq * bi_candidates$Discount
+  
+  # Calculate Probability
+  bi_candidates$Probability <- bi_candidates$Adj.Freq / sum(bi_candidates$Adj.Freq, na.rm = TRUE)
+  
+  # Adjust probability down by higher order leftover probability
+  if(leftover) {
+    bi_candidates$Probability <- bi_candidates$Probability * leftover_prob
+  }
+  
+  # Sort alphabetically to facilitate merging with words DF
+  bi_candidates <- bi_candidates[order(bi_candidates$Prediction), ]
+  
+  # Return Candidate DF
+  return(bi_candidates)
+}
+
+## Retrieve terminating words from 3-gram DF, given a cleaned text input
+tri_candidates_func <- function(clean, leftover = FALSE, leftover_prob, left_over_words) {
+  
+  # Retrieve list
+  tri_candidates <- trigramAll[trigramAll$First == clean[clean_length - 1] & 
+                               trigramAll$Second == clean[clean_length], ]
+  
+  # Remove words from higher order n-gram
+  if(leftover) {
+    tri_candidates <- tri_candidates[!tri_candidates$Prediction %in% left_over_words, ]
+  }
+  
+  # Add discount rate
+  tri_candidates <- merge(tri_candidates, tri_disc, by.x = "Freq", by.y = "frequency", all.x = TRUE)
+  
+  # Adjust frequencies down by discount
+  tri_candidates$Adj.Freq <- tri_candidates$Freq * tri_candidates$Discount
+  
+  # Calculate Probability
+  tri_candidates$Probability <- tri_candidates$Adj.Freq / sum(tri_candidates$Adj.Freq, na.rm = TRUE)
+  
+  # Adjust probability down by higher order leftover probability
+  if(leftover) {
+    tri_candidates$Probability <- tri_candidates$Probability * leftover_prob
+  }
+  
+  # Sort alphabetically to facilitate merging with words DF
+  tri_candidates <- tri_candidates[order(tri_candidates$Prediction), ]
+  
+  # Return Candidate DF
+  return(tri_candidates)
+}
+
+## Retrieve terminating words from 4-gram DF, given a cleaned text input
+quad_candidates_func <- function(clean) {
+  
+  # Retrieve list
+  quad_candidates <- quadgramAll[quadgramAll$First == clean[clean_length - 2] & 
+                                   quadgramAll$Second == clean[clean_length - 1] &
+                                   quadgramAll$Third == clean[clean_length], ]
+  
+  # Add discount rate
+  quad_candidates <- merge(quad_candidates, quad_disc, by.x = "Freq", by.y = "frequency", all.x = TRUE)
+  
+  # Adjust frequencies down by discount
+  quad_candidates$Adj.Freq <- quad_candidates$Freq * quad_candidates$Discount
+  
+  # Calculate Probability
+  quad_candidates$Probability <- quad_candidates$Adj.Freq / sum(quad_candidates$Adj.Freq, na.rm = TRUE)
+  
+  # Sort alphabetically to facilitate merging with words DF
+  quad_candidates <- quad_candidates[order(quad_candidates$Prediction), ]
+  
+  # Return Candidate DF
+  return(quad_candidates)
+}
+
+# Good-Turing Discounts
+GT_discount <- function(frequency) {
+  # Find frequency of frequencies and store as data frame
+  freqs <- as.data.frame(table(frequency), stringsAsFactors = FALSE)
+  freqs$frequency <- as.numeric(freqs$frequency)
+  freqs <- freqs[order(freqs$frequency, decreasing = FALSE), ]
+  
+  # Add next frequency and next frequency of frequencies to data frame
+  freqs$Next_frequency <- c(freqs$frequency[-1],NA)
+  freqs$Next_Freq <- c(freqs$Freq[-1],NA)
+  
+  # calculate discount rate for each frequency
+  freqs$Discount <- (freqs$Next_frequency / freqs$frequency) * (freqs$Next_Freq / freqs$Freq)
+  freqs$Discount[which.max(freqs$frequency)] <- 1
+  
+  # Remove unecessary columns
+  freqs <- freqs[, c("frequency", "Discount")]
+  
+  # Override frequency > 10
+  freqs[freqs$frequency > 10, "Discount"] <- 1
+  
+  # Return resulting DF
+  return(freqs)
+}
+
 # kill DB connections
 killDbConnections <- function () {
   

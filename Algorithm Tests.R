@@ -12,69 +12,41 @@ library(rJava)
 setwd("F:/Documents/Data work/Coursera Capstone Project/Week 1")
 source("./Scripts/Functions.R")
 
+# clean environment
+rm(list = ls())
 
-#### UPLOAD TO SQL ####
+# Load tables
+load("./Files/bigram.RD")
+load("./Files/trigram.RD")
+load("./Files/quadgram.RD")
 
-## Store Credentials
-myHost <- "69.195.124.128";
-myUsername = "bowyeran_main";
-myDbname = "bowyeran_daily_betting";
-myPort = "3306";
-myPassword = "563Jb14123";
+load("./Files/bi_disc.RD")
+load("./Files/tri_disc.RD")
+load("./Files/quad_disc.RD")
 
-time1 <- Sys.time()
+# Profanity
+# from https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words
+con <- file("./Files/profanity.txt")
+profanity <- readLines(con)
+close(con)
+
+#### Test Algorithm ####
+
 statement <- "why are they"
 
-statement <- clean_input(statement)
 
-query <- paste0("SELECT Prediction
-                 FROM bowyeran_daily_betting.quadgram
-                 WHERE First = '",statement[1],"' ",
-                "AND Second = '",statement[2],"' ",
-                "AND Third = '",statement[3],"'")
+# Add discount rates to bigram DF
+bigramAll <- merge(bigramAll, bi_disc, by.x = "Freq", by.y = "frequency", all.x = TRUE)
 
-## Create Connection
-con <- dbConnect(MySQL(),user= myUsername, password = myPassword, dbname = myDbname, host = myHost)
+# Create adjusted frequency
+bigramAll$Adj.Freq <- bigramAll$Freq * bigramAll$Discount
 
-predRes <- dbSendQuery(con, query)
-pred <- dbFetch(predRes, n = 1)
-suppressWarnings(killDbConnections())
+# Calculate adjusted frequency sums for each preceding n-gram
+bi_sums <- aggregate(bigramAll$Adj.Freq, by = list(bigramAll$First), sum)
 
-pred
-time2 <- Sys.time()
-time2 - time1
+# Calculate probabilities. Prediction frequency / sum of preceding n-gram
+bigramAll <- merge(bigramAll, bi_sums, by.x = "First", by.y = "Group.1", all.x = TRUE)
+bigramAll$GT_Prob <- bigramAll$Adj.Freq / bigramAll$x
 
-
-bigramAll$Prob <- NA
-time1 <- Sys.time()
-for(r in 15000:16000){
-  bigramAll[r, "Prob"] <- bigramAll[r, "Freq"] / sum(bigramAll$Freq[bigramAll$First == bigramAll[r, "First"]], na.rm = TRUE)
-}
-time2 <- Sys.time()
-time2 - time1
-
-
-sums <- aggregate(bigramAll$Freq, by = list(bigramAll$First), sum)
-bigramAll$Prob <- NA
-time1 <- Sys.time()
-for(r in 15000:16000){
-  bigramAll[r, "Prob"] <- bigramAll[r, "Freq"] / sums$x[sums$Group.1 == bigramAll$First[r]]
-}
-time2 <- Sys.time()
-time2 - time1
-
-load("./Files/bigramAll.RD")
-nrow(bigramAll)
-object.size(bigramAll)
-
-bigramAll <- bigramAll[bigramAll$Freq > 1, ]
-nrow(bigramAll)
-object.size(bigramAll)
-
-bigramAll <- bigramAll[bigramAll$Freq > 4, ]
-nrow(bigramAll)
-object.size(bigramAll)
-
-bigramAll <- bigramAll[bigramAll$Freq > 9, ]
-nrow(bigramAll)
-object.size(bigramAll)
+# Only include relevant fields to reduce memory usage
+bigramAll <- bigramAll[, c("First", "Prediction", "GT_Prob")]

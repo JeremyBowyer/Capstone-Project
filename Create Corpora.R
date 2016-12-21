@@ -98,7 +98,7 @@ for(i in 1:total_sample) {
 }
 
 
-# Combine n-gram dataframes from files
+# Combine n-gram dataframes from files and discount frequencies
 
 # bigrams
 for(i in 1:total_sample) {
@@ -126,17 +126,17 @@ for(i in 1:total_sample) {
 
 # Only include n-grams with multiple occurences
 bigramAll <- bigramAll[bigramAll$Freq > 1, ]
-# Calculate frequency sums for each preceding n-gram
-bi_sums <- aggregate(bigramAll$Freq, by = list(bigramAll$First), sum)
-# Calculate probabilities. Prediction frequency / sum of preceding n-gram
-bigramAll <- merge(bigramAll, bi_sums, by.x = "First", by.y = "Group.1", all.x = TRUE)
-bigramAll$Probs <- bigramAll$Freq / bigramAll$x
-# Only include relevant fields to reduce memory usage
-bigramAll <- bigramAll[, c("First", "Prediction", "Probs")]
+# Calculate Good-Turing Discount Rates for each frequency
+bi_disc <- GT_discount(bigramAll$Freq)
+
 # save object
 save(bigramAll, file = "./Files/bigram.RD")
-# remove bigram DF to clean up environment
+# save object
+save(bi_disc, file = "./Files/bi_disc.RD")
+
+# clean up environment
 rm(bigramAll)
+rm(bi_disc)
 
 # trigrams
 for(i in 1:total_sample) {
@@ -162,21 +162,19 @@ for(i in 1:total_sample) {
   print(time2 - time1)
   print(format(object.size(trigramAll), units = "MB"))
 }
-# create n-gram ID column for merge() and aggregate()
-trigramAll$ID <- paste(trigramAll$First, trigramAll$Second, sep = " ")
 # Only include n-grams with multiple occurences
 trigramAll <- trigramAll[trigramAll$Freq > 1, ]
-# Calculate frequency sums for each preceding n-gram
-tri_sums <- aggregate(trigramAll$Freq, by = list(trigramAll$ID), sum)
-# Calculate probabilities. Prediction frequency / sum of preceding n-gram
-trigramAll <- merge(trigramAll, tri_sums, by.x = "ID", by.y = "Group.1", all.x = TRUE)
-trigramAll$Probs <- trigramAll$Freq / trigramAll$x
-# Only include relevant fields to reduce memory usage
-trigramAll <- trigramAll[, c("First", "Second", "Prediction", "Probs")]
+# Calculate Good-Turing Discount Rates for each frequency
+tri_disc <- GT_discount(trigramAll$Freq)
+
 # save object
 save(trigramAll, file = "./Files/trigram.RD")
-# remove trigram DF to clean up environment
+# save object
+save(tri_disc, file = "./Files/tri_disc.RD")
+
+# clean up environment
 rm(trigramAll)
+rm(tri_disc)
 
 # quadgrams
 for(i in 1:total_sample) {
@@ -203,18 +201,16 @@ for(i in 1:total_sample) {
   print(time2 - time1)
   print(format(object.size(quadgramAll), units = "MB"))
 }
-# create n-gram ID column for merge() and aggregate()
-quadgramAll$ID <- paste(quadgramAll$First, quadgramAll$Second, quadgramAll$Third, sep = " ")
 # Only include n-grams with multiple occurences
 quadgramAll <- quadgramAll[quadgramAll$Freq > 1, ]
-# Calculate frequency sums for each preceding n-gram
-quad_sums <- aggregate(quadgramAll$Freq, by = list(quadgramAll$ID), sum)
-# Calculate probabilities. Prediction frequency / sum of preceding n-gram
-quadgramAll <- merge(quadgramAll, quad_sums, by.x = "ID", by.y = "Group.1", all.x = TRUE)
-quadgramAll$Probs <- quadgramAll$Freq / quadgramAll$x
-# Only include relevant fields to reduce memory usage
-quadgramAll <- quadgramAll[, c("First", "Second", "Third", "Prediction", "Probs")]
+# Calculate Good-Turing Discount Rates for each frequency
+quad_disc <- GT_discount(quadgramAll$Freq)
+
 # save object
 save(quadgramAll, file = "./Files/quadgram.RD")
-# remove quadgram DF to clean up environment
+# save object
+save(quad_disc, file = "./Files/quad_disc.RD")
+
+# clean up environment
 rm(quadgramAll)
+rm(quad_disc)
