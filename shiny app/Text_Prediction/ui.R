@@ -18,14 +18,14 @@ shinyUI(fluidPage(theme = shinytheme("darkly"),
     div(
       div(
       tableOutput("Table"),
-      style = "display: inline-block;padding:20px;"
+      style = "position:absolute;top:50px;left:650px;"
       ),
       
       div(
       plotOutput("WordCloud", width = "100%"),
-      style = "display: inline-block;padding:20px;"
+      style = "position:absolute;right:500px;"
       ),
-      style = "text-align:center;padding: 40px;"
+      style = "position: relative;"
     )
   )
 ))
