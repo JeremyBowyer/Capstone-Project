@@ -16,10 +16,9 @@ options(stringsAsFactors = FALSE)
 
 # Load tables
 load("bigram.RD")
-
 load("trigram.RD")
-
 load("quadgram.RD")
+load("unigramTop20.RD")
 
 # Load Discount Rates
 load("bi_disc.RD")
@@ -47,11 +46,19 @@ shinyServer(function(input, output) {
       Table <- predictions[1:20, ]
       
       Prediction <- predictions[1, "Prediction"]
+
       
       return(list(Table = Table, Prediction = Prediction))
       
     }
   })
+  
+  condition_check <- reactive({ length(reactive_pred()[["Prediction"]]) })
+  
+  output$condition <- renderText({ condition_check() })
+  
+  outputOptions(output, 'condition', suspendWhenHidden = FALSE)
+  
   
   ## Output Prediction
   output$Prediction = renderPrint({ 
@@ -59,7 +66,9 @@ shinyServer(function(input, output) {
     if(input$text != '') {
     
       output.statement <- reactive_pred()[["Prediction"]]
-      as.character(output.statement) 
+      if(length(output.statement) != 0) {
+        as.character(output.statement) 
+      } else "No prediction. Keep typing!"
       
     }
   })
@@ -80,8 +89,9 @@ shinyServer(function(input, output) {
       par(bg = "#222222")
       
       # Create plot
-      wordcloud(prob_table$Prediction, prob_table$Probability, colors = pal, fixed.asp = FALSE, rot.per = 0, random.order = FALSE, scale = c(8, 1))
-      
+      if(nrow(prob_table) != 0) {
+        wordcloud(prob_table$Prediction, prob_table$Probability, colors = pal, fixed.asp = FALSE, rot.per = 0, random.order = FALSE, scale = c(8, 1))
+      }
     }
   }, execOnResize = TRUE, width = 500, height = 500)
     
@@ -89,9 +99,8 @@ shinyServer(function(input, output) {
   output$Table <- renderTable({
     
     if(input$text != '') {
-      
-      reactive_pred()[["Table"]][1:10, ]
-      
+      probs_table <- reactive_pred()[["Table"]][1:10, ]
+      probs_table
     }
   }, striped = TRUE, bordered = TRUE)
 

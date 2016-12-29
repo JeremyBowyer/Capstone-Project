@@ -3,8 +3,8 @@ title: Text_Prediction
 account: jeremybowyer
 server: shinyapps.io
 appId: 146784
-bundleId: 659000
+bundleId: 663249
 url: https://jeremybowyer.shinyapps.io/Text_Prediction/
-when: 1482451763.21125
+when: 1482981028.37482
 asMultiple: FALSE
 asStatic: FALSE

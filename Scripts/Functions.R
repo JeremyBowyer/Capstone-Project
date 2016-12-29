@@ -5,7 +5,6 @@ text_pred <- function(statement) {
   if(!exists("quadgramAll")) {stop("Please load in quadgram DF")}
   if(!exists("trigramAll")) {stop("Please load in trigram DF")}
   if(!exists("bigramAll")) {stop("Please load in bigram DF")}
-  if(!exists("unigramTop20")) {stop("Please load in unigram DF")}  
   
   if(!exists("quad_disc")) {stop("Please load in quadgram Discounts")}
   if(!exists("tri_disc")) {stop("Please load in trigram Discunts")}
@@ -16,36 +15,10 @@ text_pred <- function(statement) {
   
   ## create list of all potential terminating words ##
   words <- bigramAll[bigramAll$First == clean[clean_length], "Prediction"]
-  
-  # If there are bigram matches, complete the "words" DF
-  if(length(words) != 0) {
-    
-    words <- data.frame(Prediction = words,
-                        Probability = NA,
-                        stringsAsFactors = FALSE)
-    words <- words[order(words$Prediction), ]
-    
-  } else if(sum(clean %in% bigramAll$First) > 0) {
-    
-    # If there are no bigram matches, but a word in
-    # the statement exists that DOES appear in the
-    # bigramDF, then remove unfound words from the
-    # end of the statement and try again
-    
-    clean <- clean[clean %in% bigramAll$First]
-    clean_length <- length(clean)
-    ## create list of all potential terminating words ##
-    words <- bigramAll[bigramAll$First == clean[clean_length], "Prediction"]
-    words <- data.frame(Prediction = words,
-                        Probability = NA,
-                        stringsAsFactors = FALSE)
-    words <- words[order(words$Prediction), ]
-  } else {
-    # If no words in the statement are found in even the bigram, return top 20 single words
-    return(unigramTop20)
-  }
-  
-  # If there were matches found in the input statement, continue on with the prediction
+  words <- data.frame(Prediction = words,
+                      Probability = NA,
+                      stringsAsFactors = FALSE)
+  words <- words[order(words$Prediction), ]
   
   ## Populate Candidate Probabilities
   if(clean_length >= 3) {

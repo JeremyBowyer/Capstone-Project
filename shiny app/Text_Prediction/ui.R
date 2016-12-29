@@ -14,7 +14,7 @@ shinyUI(fluidPage(theme = shinytheme("darkly"),
       style = "background-color:#171b1e;height:175px;text-align:center;"
   ),
   
-  conditionalPanel(condition="input.text!=''",
+  conditionalPanel(condition="output.condition != '0' ",
     div(
       div(
       tableOutput("Table"),
