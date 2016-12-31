@@ -1,10 +1,8 @@
 library(shiny)
 library(tm)
 library(stringi)
-library(RWeka)
 library(stringr)
 library(quanteda)
-library(rJava)
 library(wordcloud)
 library(RColorBrewer)
 
@@ -46,7 +44,7 @@ shinyServer(function(input, output) {
       Table <- predictions[1:20, ]
       
       Prediction <- predictions[1, "Prediction"]
-
+      
       
       return(list(Table = Table, Prediction = Prediction))
       
@@ -64,7 +62,7 @@ shinyServer(function(input, output) {
   output$Prediction = renderPrint({ 
     
     if(input$text != '') {
-    
+      
       output.statement <- reactive_pred()[["Prediction"]]
       if(length(output.statement) != 0) {
         as.character(output.statement) 
@@ -72,7 +70,7 @@ shinyServer(function(input, output) {
       
     }
   })
-
+  
   ## Word Cloud
   # create color pallete
   pal <- brewer.pal(11, "Spectral")
@@ -94,7 +92,7 @@ shinyServer(function(input, output) {
       }
     }
   }, execOnResize = TRUE, width = 500, height = 500)
-    
+  
   ## Output Table
   output$Table <- renderTable({
     
@@ -103,5 +101,5 @@ shinyServer(function(input, output) {
       probs_table
     }
   }, striped = TRUE, bordered = TRUE)
-
+  
 })
