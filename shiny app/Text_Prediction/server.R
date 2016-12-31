@@ -83,9 +83,6 @@ shinyServer(function(input, output) {
       # extract table
       prob_table <- reactive_pred()[["Table"]]
       
-      # Set plot background
-      par(bg = "#222222")
-      
       # Create plot
       if(nrow(prob_table) != 0) {
         wordcloud(prob_table$Prediction, prob_table$Probability, colors = pal, fixed.asp = FALSE, rot.per = 0, random.order = FALSE, scale = c(8, 1))
