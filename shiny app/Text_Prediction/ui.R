@@ -1,16 +1,17 @@
 library(shiny)
 library(shinythemes)
 
-# Define UI for application that draws a histogram
+# Create Navbar UI for App
 shinyUI(navbarPage(title = "Text Prediction Application",
-                   theme = shinytheme("darkly"),
+                   theme = shinytheme("slate"),
                    fluid = TRUE,
                    tabPanel("About",
-                            mainPanel(includeHTML("About.HTML"))),
+                            mainPanel(includeHTML("About.html"))),
                    tabPanel("Application",
+  # Create divs to allow for custom formatting of app
   div(
       div(
-        textInput("text", label = h1("Text Prediction", style = "color: #778899"), value = "", placeholder = "Type a phrase..."),
+        textInput("text", label = h1("Text Prediction", style = "color: #222222"), value = "", placeholder = "Type a phrase..."),
         textOutput("Prediction", inline = TRUE),
         style = "display: inline-block;"
       ),
@@ -18,7 +19,9 @@ shinyUI(navbarPage(title = "Text Prediction Application",
   ),
   hr(),
   
+  # Create conditional panel, only revealed if there are predictions to display
   conditionalPanel(condition="output.condition != '0' ",
+    # Divs to manually format the resulting table and word cloud
     div(
       div(
       tableOutput("Table"),
